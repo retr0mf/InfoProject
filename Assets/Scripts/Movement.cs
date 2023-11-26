@@ -3,69 +3,61 @@ using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
 
-public class Movement : MonoBehaviour
-{
-
-    public enum ProjectAxis { onlyX = 0, xAndY = 1 };
-    public ProjectAxis projectAxis = ProjectAxis.onlyX;
+public class Movement : MonoBehaviour { 
     public float speed = 150;
-    public float addForce = 7;
+    public float jumpForce = 7;
     public bool lookAtCursor;
     public KeyCode leftButton = KeyCode.A;
     public KeyCode rightButton = KeyCode.D;
-    public KeyCode upButton = KeyCode.W;
-    public KeyCode downButton = KeyCode.S;
     public KeyCode addForceButton = KeyCode.Space;
     public bool isFacingRight = true;
     private Vector3 direction;
-    private float vertical;
     private float horizontal;
-    private Rigidbody2D body;
-    private float rotationY;
+    private Rigidbody2D rb;
+    private Animator animator;
     private bool jump;
+    private bool isGrounded;
 
     void Start()
     {
-        body = GetComponent<Rigidbody2D>();
-    }
-
-    void OnCollisionStay2D(Collision2D coll)
-    {
-            jump = true;
-    }
-
-    void OnCollisionExit2D(Collision2D coll)
-    { 
-            jump = false;
+        rb = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
+        rb.fixedAngle = true;
     }
 
     void FixedUpdate()
     {
-        body.AddForce(direction * body.mass * speed);
+        rb.AddForce(direction * rb.mass * speed);
 
-        if (Input.GetKey(addForceButton) && jump)
+        if (Mathf.Abs(rb.velocity.x) > speed / 100f)
         {
-            body.velocity = new Vector2(0, addForce);
+            rb.velocity = new Vector2(Mathf.Sign(rb.velocity.x) * speed / 100f, rb.velocity.y);
         }
-        
+
+        if (jump)
+        {
+            rb.AddForce(new Vector2(0f, jumpForce));
+            jump = false;
+        }
     }
 
     void Flip()
     {
-        if (projectAxis == ProjectAxis.onlyX)
-        {
-            isFacingRight = !isFacingRight;
-            Vector3 theScale = transform.localScale;
-            theScale.x *= -1;
-            transform.localScale = theScale;
-        }
+        isFacingRight = !isFacingRight;
+        Vector3 theScale = transform.localScale;
+        theScale.x *= -1;
+        transform.localScale = theScale;
+    
     }
 
     void Update()
     {
+        isGrounded = Physics2D.OverlapCircle(transform.position, 0.1f);
 
-        if (Input.GetKey(upButton)) vertical = 1;
-        else if (Input.GetKey(downButton)) vertical = -1; else vertical = 0;
+        if (Input.GetKeyDown(addForceButton))
+        {
+            jump = true;
+        }
 
         if (Input.GetKey(leftButton)) horizontal = -1;
         else if (Input.GetKey(rightButton)) horizontal = 1; else horizontal = 0;
